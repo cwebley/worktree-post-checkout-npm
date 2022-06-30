@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+# fetch the checked out branch name
+BRANCH=`git symbolic-ref -q --short HEAD`
+echo "BRANCH: $BRANCH"
+
+# find all worktrees
+WORKTREES=( $(find ../worktrees -mindepth 1 -maxdepth 1 -type d -exec basename {} \;) )
+# and loop over them to try to find a node_modules symlink candidate
+for i in ${WORKTREES[@]}
+do
+    # if its the newly checked out branch, do nothing
+  if [[ $i != $BRANCH ]]; then
+    echo "this is NOT the same branch: $i"
+
+    # check if node_modules exists in this worktree
+    if [[ -d "../$i/node_modules" ]]; then
+      echo "node_modules found for $i"
+      
+      # diff the package.json from the newly checked out one
+      result=$(diff -q "../$i/package.json" "package.json")
+      if [ $? -eq 0 ]
+      then
+              echo "files are the same between $i and $BRANCH"
+              echo "lets symlink"
+              echo "PWD: $PWD"
+              ln -s "../$i/node_modules" "node_modules"
+              break 
+      else
+              echo "files are different between $i and $BRANCH"
+              echo "$result"
+      fi
+    fi
+  fi  
+done
+
+
+echo "bottom section $PWD"
+if [[ ! -d node_modules ]]; then
+  echo "wasn't able to symlink node_modules. installing with npm install"
+  npm install
+fi
