@@ -13,8 +13,8 @@ do
   if [[ $i != $BRANCH ]]; then
     echo "this is NOT the same branch: $i"
 
-    # check if node_modules exists in this worktree
-    if [[ -d "../$i/node_modules" ]]; then
+    # check if node_modules exists in this worktree and that it's not just a symlink
+    if [[ -d "../$i/node_modules" && ! -L "../$i/node_modules" ]]; then
       echo "node_modules found for $i"
       
       # diff the package.json from the newly checked out one
